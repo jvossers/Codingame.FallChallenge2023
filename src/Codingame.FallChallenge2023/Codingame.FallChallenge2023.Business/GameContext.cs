@@ -45,13 +45,30 @@ public class Drone : Position
         Y = int.Parse(droneLine[2]);
         Emergency = int.Parse(droneLine[3]);
         Battery = int.Parse(droneLine[4]);
+        Blips = new List<Blip>();
     }
 
     public int Id { get; set; }
     public int Emergency { get; set; }
     public int Battery { get; set; }
+
+    public List<Blip> Blips { get; set; }
 }
 
+public enum BlipDirection
+{
+    TopLeft,
+    TopRight,
+    BottomRight,
+    BottomLeft
+}
+
+
+public class Blip
+{
+    public Creature Creature { get; set; }
+    public BlipDirection Direction { get; set; }
+}
 
 public class Creature : Position
 {
@@ -70,17 +87,13 @@ public class Creature : Position
     public int Vy{ get; set; }
 }
 
-public class Route
+public class Waypoint : Position
 {
-    public Route(double distance, Creature target)
+    public bool Visited { get; set; }
+    public Waypoint()
     {
-        Target = target;
-        Distance = distance;
+        Visited = false;
     }
-
-    public double Score { get; set; }
-    public double Distance { get; }
-    public Creature Target { get; }
 }
 
 public class GameContext
@@ -90,15 +103,25 @@ public class GameContext
     public Player Opponent { get; }
     public List<string> Commands { get; }
     public int RoundCounter { get; private set; }
+    public List<Waypoint> Waypoints  { get; }
 
-    
 
-    public GameContext(Func<string> readLine)
+public GameContext(Func<string> readLine)
     {
         Commands = new List<string>();
         Self = new Player();
         Opponent = new Player();
         Creatures = new List<Creature>();
+        Waypoints = new List<Waypoint>()
+        {
+            new Waypoint() { X  = 3333, Y = 3750 },
+            new Waypoint() { X  = 3333, Y = 6750 },
+            new Waypoint() { X  = 3333, Y = 8750 },
+            new Waypoint() { X  = 6666, Y = 8750 },
+            new Waypoint() { X  = 6666, Y = 6750 },
+            new Waypoint() { X  = 6666, Y = 3750 },
+            new Waypoint() { X  = 5000, Y = 0 },
+        };
 
         var creatureCount = int.Parse(readLine());
 
@@ -106,34 +129,6 @@ public class GameContext
         {
             Creatures.Add(new Creature(readLine));
         }
-    }
-
-    public List<Route> GetRoutes(Drone drone)
-    {
-        var routes = new List<Route>();
-
-        foreach (var creature in Creatures)
-        {
-            var route = new Route(drone.DistanceTo(creature), creature);
-            route.Score = CalculateScore(route);
-
-            // TODO: score should be based on how many points it would give me as wel as distance 
-
-            routes.Add(route);
-        }
-
-        return routes;
-    }
-
-    public double CalculateScore(Route route)
-    {
-        if (Self.Scans.Any(s => s.Id == route.Target.Id))
-        {
-            // already scanned
-            return 0;
-        }
-
-        return Position.TopLeft.DistanceTo(Position.BottomRight) - route.Distance;
     }
 
     public void NextTurn(Func<string> readLine)
@@ -202,8 +197,7 @@ public class GameContext
             creature.Vx = creatureVx;
             creature.Vy = creatureVy;
         }
-
-        #region ignore for now
+        
         int radarBlipCount = int.Parse(readLine());
         for (int i = 0; i < radarBlipCount; i++)
         {
@@ -211,11 +205,22 @@ public class GameContext
             int droneId = int.Parse(inputs[0]);
             int creatureId = int.Parse(inputs[1]);
             string radar = inputs[2];
+
+            var creature = Creatures.Single(c => c.Id == creatureId);
+            var blipDirection = radar switch
+            {
+                "BL" => BlipDirection.BottomLeft,
+                "TL" => BlipDirection.TopLeft,
+                "BR" => BlipDirection.BottomRight,
+                "TR" => BlipDirection.TopRight,
+                _ => throw new ArgumentOutOfRangeException()
+            };
+
+            var blip = new Blip() { Creature = creature, Direction = blipDirection };
+
+            Self.Drones.Single().Blips.Add(blip);
         }
-        #endregion
     }
-
-
 
     public void QueueCommand(string command)
     {
@@ -226,7 +231,7 @@ public class GameContext
     {
         if (!Commands.Any())
         {
-            Commands.Add("WAIT 1");
+            Commands.Add("WAIT 0");
         }
         Console.WriteLine(String.Join(";", Commands));
         Commands.Clear();
