@@ -65,7 +65,9 @@
                 if (leftDrone.X == leftDroneTargetX && leftDrone.Y == leftDroneTargetY &&
                     rightDrone.X == rightDroneTargetX && rightDrone.Y == rightDroneTargetY)
                 {
-                    ctx.CurrentState = WorkflowState.Descending;
+                    ctx.CurrentState = WorkflowState.Descending; // star over again
+                    leftDrone.Command = $"WAIT 0";
+                    rightDrone.Command = $"WAIT 0";
                 }
                 else
                 {
