@@ -3,6 +3,8 @@
     public int Score { get; set; }
     public List<Creature> Scans { get; set; }
     public List<Drone> Drones { get; set; }
+    public Drone PrimaryDrone => Drones[0];
+    public Drone SecondaryDrone => Drones[1];
 
     public Player()
     {
@@ -51,7 +53,7 @@ public class Drone : Position
     public int Id { get; set; }
     public int Emergency { get; set; }
     public int Battery { get; set; }
-
+    public string Command { get; set; }
     public List<Blip> Blips { get; set; }
 }
 
@@ -96,6 +98,13 @@ public class Waypoint : Position
     }
 }
 
+public enum WorkflowState
+{
+    Descending,
+    Converging,
+    Surfacing
+}
+
 public class GameContext
 {
     public List<Creature> Creatures { get; }
@@ -104,12 +113,15 @@ public class GameContext
     public List<string> Commands { get; }
     public int RoundCounter { get; private set; }
 
+    public WorkflowState CurrentState { get; set; }
+
     public GameContext(Func<string> readLine)
     {
         Commands = new List<string>();
         Self = new Player();
         Opponent = new Player();
         Creatures = new List<Creature>();
+        CurrentState = WorkflowState.Descending;
        
         var creatureCount = int.Parse(readLine());
 
