@@ -103,26 +103,14 @@ public class GameContext
     public Player Opponent { get; }
     public List<string> Commands { get; }
     public int RoundCounter { get; private set; }
-    public List<Waypoint> Waypoints  { get; }
 
-
-public GameContext(Func<string> readLine)
+    public GameContext(Func<string> readLine)
     {
         Commands = new List<string>();
         Self = new Player();
         Opponent = new Player();
         Creatures = new List<Creature>();
-        Waypoints = new List<Waypoint>()
-        {
-            new Waypoint() { X  = 3333, Y = 3750 },
-            new Waypoint() { X  = 3333, Y = 6750 },
-            new Waypoint() { X  = 3333, Y = 8750 },
-            new Waypoint() { X  = 6666, Y = 8750 },
-            new Waypoint() { X  = 6666, Y = 6750 },
-            new Waypoint() { X  = 6666, Y = 3750 },
-            new Waypoint() { X  = 5000, Y = 0 },
-        };
-
+       
         var creatureCount = int.Parse(readLine());
 
         for (int i = 0; i < creatureCount; i++)
@@ -218,7 +206,7 @@ public GameContext(Func<string> readLine)
 
             var blip = new Blip() { Creature = creature, Direction = blipDirection };
 
-            Self.Drones.Single().Blips.Add(blip);
+            Self.Drones.Single(d => d.Id == droneId).Blips.Add(blip);
         }
     }
 
@@ -232,8 +220,14 @@ public GameContext(Func<string> readLine)
         if (!Commands.Any())
         {
             Commands.Add("WAIT 0");
+            Commands.Add("WAIT 0");
         }
-        Console.WriteLine(String.Join(";", Commands));
+
+        foreach (var command in Commands)
+        {
+            Console.WriteLine(command);
+        }
+
         Commands.Clear();
         RoundCounter++;
     }
